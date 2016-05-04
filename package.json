@@ -1,0 +1,14 @@
+{
+  "name": "@saatsinc/intranslation",
+  "version": "0.1.8",
+  "description": "finds translate phrases from PHP files",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Peter Granderson",
+  "license": "ISC",
+  "dependencies": {
+    "bluebird": "^3.3.5"
+  }
+}
