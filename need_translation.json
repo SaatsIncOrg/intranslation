@@ -4,10 +4,7 @@
         "contents": [
             {
                 "word": "hey, you are a punk!",
-                "tag": "hey_punk",
-                "trans": {
-                    "jpn": "fefef"
-                }
+                "tag": "hey_punk"
             },
             {
                 "word": "no, I thought wrong",

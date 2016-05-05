@@ -90,16 +90,19 @@ function get_files(this_path){
 readTranslations()																// get existing translations
 	.then(function(content){
 		if (app.is_json(content)){
-			console.log('existing -- ', content);
-			content = JSON.parse(content);												// parse JSON
+			log('existing -- ' + JSON.stringify(content) + '.');
 			
-			
-			if (typeof content.data !== 'undefined')									// if nested
-				data_translations = content.data != '';
-			else																		// unnested
-				data_translations = content;
+			if (content != ''){
+				content = JSON.parse(content);												// parse JSON
 				
-			data_translations = ((data_translations != '') ? data_translations : [])
+				
+				if (typeof content.data !== 'undefined')									// if nested
+					data_translations = content.data != '';
+				else																		// unnested
+					data_translations = content;
+									
+			}
+			
 		}
 		
 		return get_files(path);		
@@ -121,7 +124,8 @@ readTranslations()																// get existing translations
 		console.log('\nFound ' + get_count(data) + ' translations in ' + data.length + ' files.');
 		
 		data = app.sort_array(data);													// sort the array because async can vary the order
-		data = app.add_translations(data);												// add the translations
+		if (data_translations.length > 0)													// if option for translation file and not empty
+			data = app.add_translations(data);												// add the translations
 
 		return write_file(data);
 	})
@@ -328,7 +332,9 @@ function simpleReadFile(this_file){																	// just a promisified file-r
 function readTranslations(this_file){																// if option for it, read existing-translations file
 	
 	if (path_translations == '')
-		return('');
+		return new Promise(function(resolve, reject){ 												// promise expected - so make/finish one right away
+			resolve('');
+		});
 	else																							// if file path present
 		return simpleReadFile(path_translations);
 
