@@ -46,7 +46,8 @@ process.argv.forEach(function (val, index, array) {
 
 	
 console.log('\nUsing path ' + path + ' and outputting to ' + path_write + ' in ' + json_pretty + ' JSON.');
-console.log('\nUsing existing translations at ' + path_translations + '.');
+if (path_translations != '')
+	console.log('\nUsing existing translations at ' + path_translations + '.');
 
 
 // START
@@ -121,7 +122,7 @@ readTranslations()																// get existing translations
 	.then(function(){																	// Gathered everything
 		data = app.strip_empty(data);													    // strip files without translations
 		
-		console.log('\nFound ' + get_count(data) + ' translations in ' + data.length + ' files.');
+		console.log('\nFound ' + get_count(data) + ' words/phrases in ' + data.length + ' files.');
 		
 		data = app.sort_array(data);													// sort the array because async can vary the order
 		if (data_translations.length > 0)													// if option for translation file and not empty
