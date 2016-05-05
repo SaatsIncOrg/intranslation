@@ -6,7 +6,7 @@ var app = {},
 	path = '../',
 	path_write = 'need_translation.json',
 	path_translations = '',
-	json_pretty = 'ugly',
+	json_pretty = 'pretty',
 	debug = false,
 	data = [],
 	data_translations = [],
@@ -33,7 +33,7 @@ process.argv.forEach(function (val, index, array) {
 				json_pretty = next;													// set path_write to whatever comes next
 			else if (val.indexOf('-t') >= 0)
 				path_translations = next;											// existing translations
-			else if (val.indexOf('-r') >= 0){										// sets both
+			else if (val.indexOf('-r') >= 0){										// reconcile - sets both
 				path_write = next;
 				path_translations = next;											    
 			}
@@ -115,15 +115,17 @@ readTranslations()																// get existing translations
 		
 		return readFiles(these_files);
 	})
-	.then(function(){																	// Done with all
-		data = strip_empty(data);													    // strip files without translations
+	.then(function(){																	// Gathered everything
+		data = app.strip_empty(data);													    // strip files without translations
+		
 		console.log('\nFound ' + get_count(data) + ' translations in ' + data.length + ' files.');
-		return app.add_translations();
-	})
-	.then(function(){
+		
+		data = app.sort_array(data);													// sort the array because async can vary the order
+		data = app.add_translations(data);												// add the translations
+
 		return write_file(data);
 	})
-	.then(function(){
+	.then(function(){																	// Done with alll
 		console.log('File written to ' + path_write + '.');
 	})
 	.catch(function(err){
@@ -131,58 +133,32 @@ readTranslations()																// get existing translations
 	});
 	
 	
-/*
-function loop_dir(these_files){
-	return new Promise(function(resolve, reject){
-		var count = 0,
-			total = these_files.length;
-		
-		function decide(){									// decide when to kill loop
-			count++;
-			if (count >= total)
-				resolve();
-		}
-		
-		these_files.forEach(function(this_file){
-			read_dir(this_file)
-				.then(function(){
-					decide();
-				})
-				.catch(function(err){
-					reject(err);
-				});
-		});
-	})
-}
 
-function read_dir(this_path){
-	return new Promise(function(resolve, reject){
-		fs.readdir(path, function(err, files) {
-			log('Starting read-directory ' + this_path + '.');
-			
-			files = files.filter(function(file) { 
-				log('Filtering file ' + file + '.');
-				return ((file.substr(-4) === '.php') || (file.substr(-4) === '.hbs'));				// php or handlebars 
-			});
-			
-			readFiles(files)
-				.then(function(data){
-					log('Finished reading files from this directory.');
-					resolve();
-				})
-				.catch(function(err){
-					reject(err);
-				});
-		});
-	});
-}
-*/
 function log(message){																	// print out, if in 'verbose' mode
 	if (debug)
 		console.log('\n' + message);
 }
 
-function strip_empty(data){
+app.sort_array = function(data){
+	data.sort(function(a, b) {
+		var nameA = a.file.toUpperCase(); // ignore upper and lowercase
+		var nameB = b.file.toUpperCase(); // ignore upper and lowercase
+
+		if (nameA < nameB) {
+			return -1;
+		}
+		if (nameA > nameB) {
+			return 1;
+		}
+
+		// names must be equal
+		return 0;
+	});
+	
+	return data;
+}
+
+app.strip_empty = function(data){
 	var rtn = [];
 	
 	data.forEach(function(file_val){													// loop files
@@ -252,36 +228,61 @@ function readFiles(files){
     });
 }
 
-function translate(lang, haystack, page, word, tag){
-	 haystack.forEach(function(page, page_index){                                                               // loop pages
-		if (page.file == page){                                                                  // if correct page
+function translate(lang, haystack, m){
+	var page = {},
+		val = {};
+	
+	for(var i=0; i<haystack.length; i++){                                                               // loop pages
+		page = haystack[0];
+		
+		if (page.file == m.file){                                                                  // if correct page
 
-			page.contents.forEach(function(val, index){
-				if ((val.word == word) && ((typeof val.tag === 'undefined') || (val.tag == tag))){                  // if word matches, and tag matches or is empty
+			for(var j=0; j<page.contents.length; j++){
+				val = page.contents[j];
+				
+				if (val.trans)
+					log('val is :' + JSON.stringify(val) + '.');
+				
+				if (
+						(val.word == m.word) 
+						&& ((typeof val.tag === 'undefined') || (val.tag == '') || (typeof m.tag === 'undefined') || (val.tag == m.tag)) 				// either one empty, or they match
+						&& (typeof val.trans !== 'undefined') 
+						&& (typeof val.trans[lang] !== 'undefined') 
+						&& (val.trans[lang] != '')
+				)                  // if word matches, and tag matches or is empty
+				{
+					log('FOUND ONE! - ' + val.trans[lang] + '.');
 					return val.trans[lang];
 				}
-			});
+				
+			};
 		}
-	});
+	};
 	
-	return false;
+	return '';
 }
 
-app.add_translations = function(){
+app.add_translations = function(data){
+	var count = 0;
+	
 	data.forEach(function(page, page_index){                                                               // loop pages
 	
 		page.contents.forEach(function(val, index){
 			
 			langs.forEach(function(lang){							// loop languages
 				
-				var trans_word = translate(lang, data_translations, page, val.word, val.tag);
+				var trans_word = translate(lang, data_translations, {file: page.file, word: val.word, tag: val.tag});
 				
-				if (trans_word){								// if translation
+				if (trans_word != ''){								// if translation exists
 					
 					if (typeof data[page_index].contents[index].trans === 'undefined')
 						data[page_index].contents[index].trans = {};
 					
+					log('About to add translation for <' + val.word + '>: <' + trans_word + '>.');
+					
 					data[page_index].contents[index].trans[lang] = trans_word;
+					
+					count++;
 					
 				}	
 			});
@@ -289,6 +290,10 @@ app.add_translations = function(){
 		});
 	
 	});
+	
+	console.log(count + ' matching translations found in existing.');
+	
+	return data;
 }
 
 function readFile(this_file){

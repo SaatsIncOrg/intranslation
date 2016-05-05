@@ -5,10 +5,9 @@
             {
                 "word": "hey, you are a punk!",
                 "tag": "hey_punk",
-				"trans":
-					{
-					  "jpn":"fefef"
-					}
+                "trans": {
+                    "jpn": "fefef"
+                }
             },
             {
                 "word": "no, I thought wrong",
