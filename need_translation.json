@@ -3,12 +3,26 @@
         "file": "another.php",
         "contents": [
             {
-                "word": "hey, you are a punk!",
-                "tag": "hey_punk"
+                "word": "word is single-quotes",
+                "tag": "tag is double-quotes"
             },
             {
                 "word": "no, I thought wrong",
                 "tag": "wrong_thought"
+            },
+            {
+                "word": "these are duplicates"
+            },
+            {
+                "word": "these are not quite duplicates",
+                "tag": "hey"
+            },
+            {
+                "word": "these are not quite duplicates"
+            },
+            {
+                "word": "word is double-quotes",
+                "tag": "tag is single-quotes"
             },
             {
                 "word": "and here is some double quote without tag"

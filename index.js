@@ -174,6 +174,7 @@ app.strip_empty = function(data){
 	return rtn;
 }
 
+
 function get_count(data){
 	var total = 0;
 	
@@ -351,27 +352,65 @@ function inspectFile(contents) {
 	return rtn;
 }
 
+app.already_exists = function(haystack, m){																   // m is {file, word, tag} -- loops on page contents
+	var val = {};
+	log('Checking for already existing with variables: ' + JSON.stringify(m) + ' in haystack ' + JSON.stringify(m) + '.');
+
+	for(var j=0; j<haystack.length; j++){
+		val = haystack[j];
+		
+		if (val.trans)
+			log('val is :' + JSON.stringify(val) + '.');
+		
+		if (
+				(val.word == m.word) 
+				&& (((typeof val.tag === 'undefined') || (val.tag == '')) && ((typeof m.tag === 'undefined') || (m.tag == '')) || (val.tag == m.tag)) 				// if both empty, or both match
+		)                  // if word matches, and tag matches or is empty
+			return true;
+		
+	};
+
+	return false;
+}
+
+
 function make_list(contents, regex, quote, is_php){														// is_php vs. handlebars template
 		
 	var trans_length = (is_php ? 11 : 9),
 		result, 
 		rtn = [],
-		remain = '';								// left over, for pulling word
+		remain = '',								// left over, for pulling word
+		tag_remain = '',
+		tag_quote = "'",
+		prepped = {};
 		
 	while ( (result = regex.exec(contents)) ) {
 		
 		remain = contents.substring((result.index + trans_length));
 		remain = remain.substring(0, (remain.indexOf((is_php ? ')' : '}}')) - 1));							// trim down to both strings without quotes on either end, eg.  hey','9092
 		
-		if (remain.indexOf(quote) >= 0)																		// If tag
-			rtn.push({
+		tag_remain = remain.substring((remain.indexOf(quote) + 1), remain.length);							// from after last word quote, to end, eg.   ,'9092
+		tag_quote = ((tag_remain.indexOf("'") < tag_remain.indexOf("\"")) ? "'" : "\"");					// take the next quote
+		tag_quote = ((tag_remain.indexOf("'") == -1) ? "\"" : "'");											// resolve problem of not existing quotes
+		
+		
+		if (remain.indexOf(quote) >= 0){																		// If tag
+			prepped = {
 				word: remain.substring(0, (remain.indexOf(quote))),
-				tag: remain.substring((remain.lastIndexOf(quote) + 1), remain.length)						// cut off just before next quote
-			});				
-		else if (is_php)																			        // If NO tag and PHP (don't save no-tag handlebars)
-			rtn.push({
+				tag: tag_remain.substring((tag_remain.lastIndexOf(tag_quote) + 1), tag_remain.length)						// cut off just after next quote
+			};	
+			
+			if (!app.already_exists(rtn, {word: prepped.word, tag: prepped.tag}))
+				rtn.push(prepped);
+		}
+		else if (is_php){																			        // If NO tag and PHP (don't save no-tag handlebars)
+			prepped = {
 				word: remain
-			});
+			};
+			
+			if (!app.already_exists(rtn, {word: prepped.word, tag: prepped.tag}))
+				rtn.push(prepped);
+		}
 			
 	}
 	log(JSON.stringify(rtn, null, 4));
