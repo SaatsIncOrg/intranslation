@@ -328,7 +328,7 @@ function simpleReadFile(this_file){																	// just a promisified file-r
 function readTranslations(this_file){																// if option for it, read existing-translations file
 	
 	if (path_translations == '')
-		resolve('');
+		return('');
 	else																							// if file path present
 		return simpleReadFile(path_translations);
 

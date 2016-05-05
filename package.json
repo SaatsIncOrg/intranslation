@@ -1,6 +1,6 @@
 {
   "name": "@saatsinc/intranslation",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "finds translate phrases from PHP files",
   "main": "index.js",
   "scripts": {
