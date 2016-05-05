@@ -34,9 +34,9 @@ console.log('\nUsing path ' + path + ' and outputting to ' + path_write + ' in '
 fs.readdir(path, function(err, files) {
 	log('Starting read-directory');
 	
-	files  = files.filter(function(file) { 
+	files = files.filter(function(file) { 
 		log('Filtering file ' + file + '.');
-		return file.substr(-4) === '.php'; 
+		return ((file.substr(-4) === '.php') || (file.substr(-4) === '.hbs'));				// php or handlebars 
 	});
 	
 	readFiles(files)
@@ -90,7 +90,7 @@ function readFiles(files){
 	return new Promise(function(resolve, reject){
 		var data = [];
 		
-		if (typeof files === 'undefined'){												// if no file, halt
+		if ((typeof files === 'undefined') || (files.length <= 0)){												// if no file, halt
 			log('Found no files');
 			resolve(data);
 		}
@@ -151,17 +151,18 @@ function readFile(this_file, short_name){
 }
 
 function inspectFile(contents) {
-	var rtn = [],
-		single = make_list(contents, /translate\('/gi, "'");											// single quotes
+	var rtn = make_list(contents, /translate\('/gi, "'", true);											// translate('', '')
 	
-	rtn = single.concat(make_list(contents, /translate\("/gi, "\""));									// full quotes
+	rtn = rtn.concat(make_list(contents, /translate\("/gi, "\"", true));									// translate("", "")
+	rtn = rtn.concat(make_list(contents, /\{\{trans '/gi, "'", false));									// {{trans '' ''}}
+	rtn = rtn.concat(make_list(contents, /\{\{trans "/gi, "\"", false));									// {{trans "" ""}}
 	
 	return rtn;
 }
 
-function make_list(contents, regex, quote){
+function make_list(contents, regex, quote, is_php){														// is_php vs. handlebars template
 		
-	var trans_length = 11,
+	var trans_length = (is_php ? 11 : 9),
 		result, 
 		rtn = [],
 		remain = '';								// left over, for pulling word
@@ -169,19 +170,20 @@ function make_list(contents, regex, quote){
 	while ( (result = regex.exec(contents)) ) {
 		
 		remain = contents.substring((result.index + trans_length));
-		remain = remain.substring(0, (remain.indexOf(")") - 1));										// trim down to both strings without quotes on either end, eg.  hey','9092
+		remain = remain.substring(0, (remain.indexOf((is_php ? ')' : '}}')) - 1));							// trim down to both strings without quotes on either end, eg.  hey','9092
 		
-		if (remain.indexOf(quote) < 0)																	// If no tag
-			rtn.push({
-				word: remain
-			});
-		else																							// If tag present
+		if (remain.indexOf(quote) >= 0)																		// If tag
 			rtn.push({
 				word: remain.substring(0, (remain.indexOf(quote))),
 				tag: remain.substring((remain.lastIndexOf(quote) + 1), remain.length)						// cut off just before next quote
 			});				
+		else if (is_php)																			        // If NO tag and PHP (don't save no-tag handlebars)
+			rtn.push({
+				word: remain
+			});
+			
 	}
-	
+	log(JSON.stringify(rtn, null, 4));
 	return rtn;
 	
 }

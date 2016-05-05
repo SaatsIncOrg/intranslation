@@ -1,1 +1,4 @@
 need_translation.js
+npm-debug.log
+node_modules/
+.git/
