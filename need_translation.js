@@ -1,1 +1,0 @@
-[{"file":"php-template.hbs","contents":[{"word":"customer","tag":"par_listing_bar"},{"word":"customer","tag":"par_listing_bar"}]}]

@@ -1,0 +1,47 @@
+[
+    {
+        "file": "another.php",
+        "contents": [
+            {
+                "word": "hey, you are a punk!",
+                "tag": "hey_punk"
+            },
+            {
+                "word": "no, I thought wrong",
+                "tag": "wrong_thought"
+            },
+            {
+                "word": "and here is some double quote without tag"
+            }
+        ]
+    },
+    {
+        "file": "php-template.hbs",
+        "contents": [
+            {
+                "word": "customer",
+                "tag": "par_listing_bar"
+            },
+            {
+                "word": "customer",
+                "tag": "par_listing_bar"
+            }
+        ]
+    },
+    {
+        "file": "index.php",
+        "contents": [
+            {
+                "word": "hey, you are a punk!",
+                "tag": "hey_punk"
+            },
+            {
+                "word": "no, I thought wrong",
+                "tag": "wrong_thought"
+            },
+            {
+                "word": "and here is some double quote without tag"
+            }
+        ]
+    }
+]
