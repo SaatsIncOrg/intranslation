@@ -2,6 +2,9 @@
 
 echo "this is content";
 
+translate('hey, you are a punk!', 'hey_punk');
+translate('punkish!', 'punkish');
+
 translate('word is single-quotes', "tag is double-quotes");
 
 echo "more";

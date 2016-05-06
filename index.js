@@ -53,7 +53,7 @@ if (path_translations != '')
 // START
 
 
-function get_files(this_path){
+app.get_files = function(this_path){
 	return new Promise(function(resolve, reject){									// promisify
 		
 		var walk = function(dir, done) {
@@ -86,63 +86,14 @@ function get_files(this_path){
 				resolve(results);
 		});
 	});
-}
-
-readTranslations()																// get existing translations
-	.then(function(content){
-		if (app.is_json(content)){
-			log('existing -- ' + JSON.stringify(content) + '.');
-			
-			if (content != ''){
-				content = JSON.parse(content);												// parse JSON
-				
-				
-				if (typeof content.data !== 'undefined')									// if nested
-					data_translations = content.data != '';
-				else																		// unnested
-					data_translations = content;
-									
-			}
-			
-		}
-		
-		return get_files(path);		
-	})
-	.then(function(these_files){
-		
-		these_files = these_files.filter(function(file) { 
-				log('Filtering file ' + file + '.');
-				return ((file.substr(-4) === '.php') || (file.substr(-4) === '.hbs'));				// php or handlebars 
-			});
-			
-			
-		
-		return readFiles(these_files);
-	})
-	.then(function(){																	// Gathered everything
-		data = app.strip_empty(data);													    // strip files without translations
-		
-		console.log('\nFound ' + get_count(data) + ' words/phrases in ' + data.length + ' files.');
-		
-		data = app.sort_array(data);													// sort the array because async can vary the order
-		if (data_translations.length > 0)													// if option for translation file and not empty
-			data = app.add_translations(data);												// add the translations
-
-		return write_file(data);
-	})
-	.then(function(){																	// Done with alll
-		console.log('File written to ' + path_write + '.');
-	})
-	.catch(function(err){
-		console.log('Error at some point:', err);
-	});
+};
 	
 	
 
-function log(message){																	// print out, if in 'verbose' mode
+app.log = function(message){																	// print out, if in 'verbose' mode
 	if (debug)
 		console.log('\n' + message);
-}
+};
 
 app.sort_array = function(data){
 	data.sort(function(a, b) {
@@ -161,7 +112,7 @@ app.sort_array = function(data){
 	});
 	
 	return data;
-}
+};
 
 app.strip_empty = function(data){
 	var rtn = [];
@@ -172,10 +123,10 @@ app.strip_empty = function(data){
 	});
 	
 	return rtn;
-}
+};
 
 
-function get_count(data){
+app.get_count = function(data){
 	var total = 0;
 	
 	data.forEach(function(file_val){													// loop files
@@ -184,28 +135,28 @@ function get_count(data){
 	});
 	
 	return total;
-}
+};
 
 
-function readFiles(files){
+app.readFiles = function(files){
 	
 	return new Promise(function(resolve, reject){
 		
 		if ((typeof files === 'undefined') || (files.length <= 0)){												// if no file, halt
-			log('Found no files');
+			app.log('Found no files');
 			resolve(data);
 		}
 		else {																			// if file exists
-			log('Starting read of files');
+			app.log('Starting read of files');
 			var	length = files.length,
 				count = 0;
 			
 			files
 			.forEach(function(file) { 
 			
-				log('Reading file ' + file + '.');
+				app.log('Reading file ' + file + '.');
 
-				readFile(file)
+				app.readFile(file)
 					.then(function(res){					// on success, add to array
 						
 						data.push(res);	
@@ -218,10 +169,10 @@ function readFiles(files){
 					})
 					.finally(function(){					// regardless, plus-up and check for end
 						count++;
-						log('Count ' + count + ' and length ' + length + '.');
+						app.log('Count ' + count + ' and length ' + length + '.');
 						
 						if (count == length){
-							log('Reached the end of the file list.');
+							app.log('Reached the end of the file list.');
 							resolve(data);
 						}
 							
@@ -232,14 +183,14 @@ function readFiles(files){
 		
 		
     });
-}
+};
 
-function translate(lang, haystack, m){
+app.translate = function(lang, haystack, m){
 	var page = {},
 		val = {};
 	
 	for(var i=0; i<haystack.length; i++){                                                               // loop pages
-		page = haystack[0];
+		page = haystack[i];
 		
 		if (page.file == m.file){                                                                  // if correct page
 
@@ -247,7 +198,7 @@ function translate(lang, haystack, m){
 				val = page.contents[j];
 				
 				if (val.trans)
-					log('val is :' + JSON.stringify(val) + '.');
+					app.log('Looking-for and in file: ' + m.file + ', val is :' + JSON.stringify(val) + '.');
 				
 				if (
 						(val.word == m.word) 
@@ -257,7 +208,7 @@ function translate(lang, haystack, m){
 						&& (val.trans[lang] != '')
 				)                  // if word matches, and tag matches or is empty
 				{
-					log('FOUND ONE! - ' + val.trans[lang] + '.');
+					app.log('FOUND ONE! - ' + val.trans[lang] + '.');
 					return val.trans[lang];
 				}
 				
@@ -266,7 +217,7 @@ function translate(lang, haystack, m){
 	};
 	
 	return '';
-}
+};
 
 app.add_translations = function(data){
 	var count = 0;
@@ -277,14 +228,14 @@ app.add_translations = function(data){
 			
 			langs.forEach(function(lang){							// loop languages
 				
-				var trans_word = translate(lang, data_translations, {file: page.file, word: val.word, tag: val.tag});
+				var trans_word = app.translate(lang, data_translations, {file: page.file, word: val.word, tag: val.tag});
 				
 				if (trans_word != ''){								// if translation exists
 					
 					if (typeof data[page_index].contents[index].trans === 'undefined')
 						data[page_index].contents[index].trans = {};
 					
-					log('About to add translation for <' + val.word + '>: <' + trans_word + '>.');
+					app.log('About to add translation for <' + val.word + '>: <' + trans_word + '>.');
 					
 					data[page_index].contents[index].trans[lang] = trans_word;
 					
@@ -300,16 +251,16 @@ app.add_translations = function(data){
 	console.log(count + ' matching translations found in existing.');
 	
 	return data;
-}
+};
 
-function readFile(this_file){
+app.readFile = function(this_file){
 	
 	return new Promise(function(resolve, reject){
         fs.readFile(this_file, 'utf-8', function(err, contents) { 
 			if (!err){
 				resolve({
 					file: this_file.substring(this_file.lastIndexOf('\\') + 1),
-					contents: inspectFile(contents)
+					contents: app.inspectFile(contents)
 				});
 			}
 			else
@@ -317,9 +268,9 @@ function readFile(this_file){
 			
 		}); 
     });
-}
+};
 
-function simpleReadFile(this_file){																	// just a promisified file-read
+app.simpleReadFile = function(this_file){																	// just a promisified file-read
 	
 	return new Promise(function(resolve, reject){
         fs.readFile(this_file, 'utf-8', function(err, contents) { 
@@ -329,38 +280,38 @@ function simpleReadFile(this_file){																	// just a promisified file-r
 				reject(err);
 		}); 
     });
-}
+};
 
-function readTranslations(this_file){																// if option for it, read existing-translations file
+app.readTranslations = function(this_file){																// if option for it, read existing-translations file
 	
 	if (path_translations == '')
 		return new Promise(function(resolve, reject){ 												// promise expected - so make/finish one right away
 			resolve('');
 		});
 	else																							// if file path present
-		return simpleReadFile(path_translations);
+		return app.simpleReadFile(path_translations);
 
-}
+};
 
-function inspectFile(contents) {
-	var rtn = make_list(contents, /translate\('/gi, "'", true);											// translate('', '')
+app.inspectFile = function(contents) {
+	var rtn = app.make_list(contents, /translate\('/gi, "'", true);											// translate('', '')
 	
-	rtn = rtn.concat(make_list(contents, /translate\("/gi, "\"", true));									// translate("", "")
-	rtn = rtn.concat(make_list(contents, /\{\{trans '/gi, "'", false));									// {{trans '' ''}}
-	rtn = rtn.concat(make_list(contents, /\{\{trans "/gi, "\"", false));									// {{trans "" ""}}
+	rtn = rtn.concat(app.make_list(contents, /translate\("/gi, "\"", true));									// translate("", "")
+	rtn = rtn.concat(app.make_list(contents, /\{\{trans '/gi, "'", false));									// {{trans '' ''}}
+	rtn = rtn.concat(app.make_list(contents, /\{\{trans "/gi, "\"", false));									// {{trans "" ""}}
 	
 	return rtn;
-}
+};
 
 app.already_exists = function(haystack, m){																   // m is {file, word, tag} -- loops on page contents
 	var val = {};
-	log('Checking for already existing with variables: ' + JSON.stringify(m) + ' in haystack ' + JSON.stringify(m) + '.');
+	app.log('Checking for already existing with variables: ' + JSON.stringify(m) + ' in haystack ' + JSON.stringify(m) + '.');
 
 	for(var j=0; j<haystack.length; j++){
 		val = haystack[j];
 		
 		if (val.trans)
-			log('val is :' + JSON.stringify(val) + '.');
+			app.log('val is :' + JSON.stringify(val) + '.');
 		
 		if (
 				(val.word == m.word) 
@@ -371,10 +322,10 @@ app.already_exists = function(haystack, m){																   // m is {file, wor
 	};
 
 	return false;
-}
+};
 
 
-function make_list(contents, regex, quote, is_php){														// is_php vs. handlebars template
+app.make_list = function(contents, regex, quote, is_php){														// is_php vs. handlebars template
 		
 	var trans_length = (is_php ? 11 : 9),
 		result, 
@@ -413,12 +364,12 @@ function make_list(contents, regex, quote, is_php){														// is_php vs. h
 		}
 			
 	}
-	log(JSON.stringify(rtn, null, 4));
+	app.log(JSON.stringify(rtn, null, 4));
 	return rtn;
 	
-}
+};
 
-function write_file(data){
+app.write_file = function(data){
 		
 	return new Promise(function(resolve, reject){
 		fs.writeFile(path_write, JSON.stringify(data, null, ((json_pretty == 'pretty') ? 4 : null)), function (err) {
@@ -428,7 +379,7 @@ function write_file(data){
 				resolve();
 		});
     });
-}
+};
 
 app.is_json = function(string){
     // Below returns 'true' if json
@@ -437,3 +388,56 @@ app.is_json = function(string){
         replace(/(?:^|:|,)(?:\s*\[)+/g, ''))
     );
 };
+
+
+
+//// START
+
+app.readTranslations()																// get existing translations
+	.then(function(content){
+		if (app.is_json(content)){
+			app.log('existing -- ' + JSON.stringify(content) + '.');
+			
+			if (content != ''){
+				content = JSON.parse(content);												// parse JSON
+				
+				
+				if (typeof content.data !== 'undefined')									// if nested
+					data_translations = content.data != '';
+				else																		// unnested
+					data_translations = content;
+									
+			}
+			
+		}
+		
+		return app.get_files(path);		
+	})
+	.then(function(these_files){
+		
+		these_files = these_files.filter(function(file) { 
+				app.log('Filtering file ' + file + '.');
+				return ((file.substr(-4) === '.php') || (file.substr(-4) === '.hbs'));				// php or handlebars 
+			});
+			
+			
+		
+		return app.readFiles(these_files);
+	})
+	.then(function(){																	// Gathered everything
+		data = app.strip_empty(data);													    // strip files without translations
+		
+		console.log('\nFound ' + app.get_count(data) + ' words/phrases in ' + data.length + ' files.');
+		
+		data = app.sort_array(data);													// sort the array because async can vary the order
+		if (data_translations.length > 0)													// if option for translation file and not empty
+			data = app.add_translations(data);												// add the translations
+
+		return app.write_file(data);
+	})
+	.then(function(){																	// Done with alll
+		console.log('File written to ' + path_write + '.');
+	})
+	.catch(function(err){
+		console.log('Error at some point:', err);
+	});

@@ -23,11 +23,17 @@
         "contents": [
             {
                 "word": "hey, you are a punk!",
-                "tag": "hey_punk"
+                "tag": "hey_punk",
+				"trans": {
+                    "jpn": "punk fefef"
+                }
             },
             {
                 "word": "no, I thought wrong",
-                "tag": "wrong_thought"
+                "tag": "wrong_thought",
+				"trans": {
+                    "eng": "wrong thought buddy"
+                }
             },
             {
                 "word": "and here is some double quote without tag"
